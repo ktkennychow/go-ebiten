@@ -1,9 +1,12 @@
 package main
 
 import (
+	"fmt"
+	"image/color"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/text"
 )
 
 type Game struct {
@@ -11,6 +14,14 @@ type Game struct {
 	meteorSpawnTimer *Timer
 	meteors          []*Meteor
 	bullets          []*Bullet
+	score            int
+}
+
+func (g *Game) Reset() {
+	g.player = NewPlayer()
+	g.meteors = nil
+	g.bullets = nil
+	g.score = 0
 }
 
 func (g *Game) Update() error {
@@ -62,6 +73,22 @@ func (g *Game) Update() error {
 		bullet.Update()
 	}
 
+	for i, meteor := range g.meteors {
+		for j, bullet := range g.bullets {
+			if bullet.Collider().Intersects(meteor.Collider()) {
+				g.score++
+				g.bullets = append(g.bullets[:j], g.bullets[j+1:]...)
+				g.meteors = append(g.meteors[:i], g.meteors[i+1:]...)
+			}
+		}
+	}
+
+	for _, meteor := range g.meteors {
+		if g.player.Collider().Intersects(meteor.Collider()) {
+			g.Reset()
+		}
+	}
+
 	return nil
 }
 
@@ -75,6 +102,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	for _, bullet := range g.bullets {
 		bullet.Draw(screen)
 	}
+	text.Draw(screen, fmt.Sprintf("%06d", g.score), ScoreFont, ScreenWidth/2-100, 50, color.White)
+
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {

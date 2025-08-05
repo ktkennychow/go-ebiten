@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/opentype"
 )
 
 const (
@@ -67,6 +69,31 @@ func mustLoadImages(pattern string) []*ebiten.Image {
 	return images
 }
 
+var ScoreFont = mustLoadFont("assets/Bonus/kenvector_future.ttf")
+
+func mustLoadFont(name string) font.Face {
+	f, err := assets.ReadFile(name)
+	if err != nil {
+		panic(err)
+	}
+
+	tt, err := opentype.Parse(f)
+	if err != nil {
+		panic(err)
+	}
+
+	face, err := opentype.NewFace(tt, &opentype.FaceOptions{
+		Size:    48,
+		DPI:     72,
+		Hinting: font.HintingVertical,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	return face
+}
+
 // get just the direction without the length
 func (v *Vector) Normalize() Vector {
 	length := math.Sqrt(v.X*v.X + v.Y*v.Y)
@@ -74,6 +101,30 @@ func (v *Vector) Normalize() Vector {
 		X: v.X / length,
 		Y: v.Y / length,
 	}
+}
+
+func NewRect(x, y, w, h float64) Rect {
+	dimensionAsSquare := math.Min(w, h)
+	return Rect{
+		X: x + (w-dimensionAsSquare)/2,
+		Y: y + (h-dimensionAsSquare)/2,
+		W: dimensionAsSquare,
+		H: dimensionAsSquare,
+	}
+}
+
+func (r Rect) MaxX() float64 {
+	return r.X + r.W
+}
+func (r Rect) MaxY() float64 {
+	return r.Y + r.H
+}
+
+func (r Rect) Intersects(other Rect) bool {
+	return r.X < other.MaxX() &&
+		r.MaxX() > other.X &&
+		r.Y < other.MaxY() &&
+		r.MaxY() > other.Y
 }
 
 func NewTimer(d time.Duration) *Timer {

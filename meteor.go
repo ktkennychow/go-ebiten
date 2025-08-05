@@ -74,6 +74,17 @@ func NewMeteor() *Meteor {
 	}
 }
 
+func (m *Meteor) Collider() Rect {
+	bounds := m.sprite.Bounds()
+
+	return NewRect(
+		m.position.X,
+		m.position.Y,
+		float64(bounds.Dx()),
+		float64(bounds.Dy()),
+	)
+}
+
 func (m *Meteor) Update() {
 	m.position.X += m.movement.X
 	m.position.Y += m.movement.Y

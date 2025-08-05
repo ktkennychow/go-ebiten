@@ -14,7 +14,7 @@ type Player struct {
 	shootTimer *Timer
 	sprite     *ebiten.Image
 	IsShooting bool
-} 
+}
 
 func NewPlayer() *Player {
 	sprite := PlayerSprites[rand.IntN(len(PlayerSprites))]
@@ -33,6 +33,17 @@ func NewPlayer() *Player {
 		sprite:     sprite,
 		shootTimer: NewTimer(1 * time.Second),
 	}
+}
+
+func (p *Player) Collider() Rect {
+	bounds := p.sprite.Bounds()
+
+	return NewRect(
+		p.position.X,
+		p.position.Y,
+		float64(bounds.Dx()),
+		float64(bounds.Dy()),
+	)
 }
 
 func (p *Player) Update() {

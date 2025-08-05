@@ -21,6 +21,17 @@ func NewBullet(origin Vector, rotation float64) *Bullet {
 	}
 }
 
+func (b *Bullet) Collider() Rect {
+	bounds := b.sprite.Bounds()
+
+	return NewRect(
+		b.position.X,
+		b.position.Y,
+		float64(bounds.Dx()),
+		float64(bounds.Dy()),
+	)
+}
+
 func (b *Bullet) Update() {
 	speed := float64(1000 / ebiten.TPS())
 	// use delta for constant speed for all 8 directions
