@@ -2,7 +2,6 @@ package main
 
 import (
 	"embed"
-	"fmt"
 	"io/fs"
 
 	"image"
@@ -13,7 +12,6 @@ import (
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/colorm"
 )
 
 const (
@@ -239,34 +237,17 @@ func (p *Player) Draw(screen *ebiten.Image) {
 
 	op.GeoM.Translate(p.position.X, p.position.Y)
 
-	cm := colorm.ColorM{}
-	cm.Translate(1.0, 1.0, 1.0, 0.0)
-	cmOp := &colorm.DrawImageOptions{}
-	cmOp.GeoM.Translate(-halfW*0.1, -halfH*0.1)
-	cmOp.GeoM.Rotate(p.rotation)
-	cmOp.GeoM.Translate(halfW*0.1, halfH*0.1)
-	cmOp.GeoM.Scale(0.1, 0.1)
-
-	fmt.Println(p.rotation)
-	// -halfW * 0.1 to halfW * 0.1 depending on rotation, rotation = 0 ->  halfW * 0.1 but 180 is -halfW * 0.1
-	delta := Vector{
-		X: math.Cos(p.rotation) * halfW * 0.1,
-		Y: math.Sin(p.rotation) * halfH * 0.1,
-	}
-	fmt.Println(delta)
-	cmOp.GeoM.Translate(p.position.X+halfW+delta.X, p.position.Y+halfH+delta.Y)
-
 	screen.DrawImage(p.sprite, op)
-	colorm.DrawImage(screen, p.sprite, cm, cmOp)
 }
 
 func (b *Bullet) Update() {
 	speed := float64(1000 / ebiten.TPS())
-	// use delta
+	// use delta for constant speed for all 8 directions
 	delta := Vector{
 		X: math.Sin(b.rotation) * speed,
 		Y: math.Cos(b.rotation) * -speed,
 	}
+
 	b.position.X += delta.X
 	b.position.Y += delta.Y
 }
@@ -324,6 +305,8 @@ func (t *Timer) Reset() {
 }
 
 func (g *Game) Update() error {
+	bullet := NewBullet(Vector{}, g.player.rotation)
+
 	g.player.Update()
 	g.meteorSpawnTimer.Update()
 	if g.meteorSpawnTimer.IsReady() {
@@ -337,14 +320,28 @@ func (g *Game) Update() error {
 		halfW := float64(playerBounds.Dx()) / 2
 		halfH := float64(playerBounds.Dy()) / 2
 
-		bulletSpawnOffset := float64(playerBounds.Size().Y / 2)
-
 		playerCenter := Vector{
-			X: g.player.position.X + halfW + math.Sin(g.player.rotation)*bulletSpawnOffset,
-			Y: g.player.position.Y + halfH - math.Cos(g.player.rotation)*bulletSpawnOffset,
+			X: g.player.position.X + halfW + math.Sin(g.player.rotation),
+			Y: g.player.position.Y + halfH - math.Cos(g.player.rotation),
 		}
 
-		bullet := NewBullet(playerCenter, g.player.rotation)
+		bulletBounds := bullet.sprite.Bounds()
+		bulletHalfW := float64(bulletBounds.Dx()) / 2
+		bulletHalfH := float64(bulletBounds.Dy()) / 2
+
+		playerDimensionAsSquare := math.Min(float64(playerBounds.Dx()), float64(playerBounds.Dy()))
+
+		// need a delta from playerbounds
+		delta := Vector{
+			X: math.Sin(g.player.rotation) * playerDimensionAsSquare / 2,
+			Y: math.Cos(g.player.rotation) * playerDimensionAsSquare / 2,
+		}
+
+		bullet.position = Vector{
+			X: playerCenter.X - bulletHalfW + delta.X,
+			Y: playerCenter.Y - bulletHalfH - delta.Y,
+		}
+
 		g.bullets = append(g.bullets, bullet)
 	}
 
@@ -376,7 +373,7 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 }
 
 func main() {
-	ebiten.SetWindowSize(640, 480)
+	ebiten.SetWindowSize(1024, 768)
 	ebiten.SetWindowTitle("Hello, World!")
 	p := NewPlayer()
 	g := &Game{
