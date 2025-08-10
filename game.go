@@ -2,11 +2,10 @@ package main
 
 import (
 	"fmt"
-	"image/color"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/text"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
 )
 
 type Game struct {
@@ -102,8 +101,16 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	for _, bullet := range g.bullets {
 		bullet.Draw(screen)
 	}
-	text.Draw(screen, fmt.Sprintf("%06d", g.score), ScoreFont, ScreenWidth/2-100, 50, color.White)
 
+	scoreText := fmt.Sprintf("SCORE: %06d", g.score)
+	scoreGeoM := ebiten.GeoM{}
+	scoreGeoM.Translate(20, 30)
+
+	text.Draw(screen, scoreText, ScoreFont, &text.DrawOptions{
+		DrawImageOptions: ebiten.DrawImageOptions{
+			GeoM: scoreGeoM,
+		},
+	})
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {

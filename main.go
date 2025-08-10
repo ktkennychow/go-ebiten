@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"embed"
 	"io/fs"
 
@@ -11,8 +12,7 @@ import (
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"golang.org/x/image/font"
-	"golang.org/x/image/font/opentype"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
 )
 
 const (
@@ -71,27 +71,23 @@ func mustLoadImages(pattern string) []*ebiten.Image {
 
 var ScoreFont = mustLoadFont("assets/Bonus/kenvector_future.ttf")
 
-func mustLoadFont(name string) font.Face {
+func mustLoadFont(name string) *text.GoTextFace {
 	f, err := assets.ReadFile(name)
 	if err != nil {
 		panic(err)
 	}
 
-	tt, err := opentype.Parse(f)
+	source, err := text.NewGoTextFaceSource(bytes.NewReader(f))
 	if err != nil {
 		panic(err)
 	}
 
-	face, err := opentype.NewFace(tt, &opentype.FaceOptions{
-		Size:    48,
-		DPI:     72,
-		Hinting: font.HintingVertical,
-	})
-	if err != nil {
-		panic(err)
+	goTextFace := &text.GoTextFace{
+		Source: source,
+		Size:   24,
 	}
 
-	return face
+	return goTextFace
 }
 
 // get just the direction without the length
